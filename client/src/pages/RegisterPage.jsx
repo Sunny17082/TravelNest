@@ -9,7 +9,11 @@ const RegisterPage = () => {
 
 	function registerUser(e) {
 		e.preventDefault();
-		axios.get("http://localhost:5000/test");
+		axios.post("/register", {
+			name,
+			email,
+			password
+		});
 	}
 
   	return (
