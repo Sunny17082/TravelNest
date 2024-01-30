@@ -10,7 +10,7 @@ const RegisterPage = () => {
 					<input type="text" placeholder="your name here" />
 					<input type="email" placeholder="your@email.com" />
 					<input type="password" placeholder="password" />
-					<button className="primary">Login</button>
+					<button className="primary">Register</button>
 				</form>
 				<div className="text-center py-2 text-gray-500">
 					Already have an account? <Link to="/login" className="underline text-black">login</Link>
