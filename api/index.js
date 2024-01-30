@@ -43,9 +43,14 @@ app.post("/login", async (req, res) => {
         email
     })
     if (userDoc) {
-        res.json("found");
+        const passOk = bcrypt.compareSync(password, userDoc.password);
+        if (passOk) {
+            res.json("Password ok");
+        } else {
+            res.status(422).json("Password not ok");
+        }
     } else {
-        res.json("not found");
+        res.status(422).json("not found");
     }
 })
 
