@@ -1,3 +1,4 @@
+import axios from 'axios';
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom';
 
@@ -8,6 +9,7 @@ const RegisterPage = () => {
 
 	function registerUser(e) {
 		e.preventDefault();
+		axios.get("http://localhost:5000/test");
 	}
 
   	return (
