@@ -33,7 +33,7 @@ app.post("/register", async (req, res) => {
         });
         res.json(userDoc);
     } catch (err) {
-        res.json(err);
+        res.status(422).json(err);
     }
 });
 
