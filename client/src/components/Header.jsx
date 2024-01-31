@@ -53,7 +53,7 @@ const Header = () => {
 				</button>
 			</div>
 			<Link
-				to={"/login"}
+				to={user? "/account":"/login"}
 				className={
 					"flex gap-2 border border-gray-300 rounded-full px-4 py-2 shadow-md"
 				}
