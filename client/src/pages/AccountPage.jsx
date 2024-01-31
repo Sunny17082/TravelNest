@@ -16,14 +16,14 @@ const AccountPage = () => {
         return <div>Loading...</div>
     }
 
-    if (ready && !user) {
+    if (ready && !user && !redirect) {
         return <Navigate to="/login" />
     }
 
     async function logout() {
         await axios.post("/logout");
         setRedirect(true);
-        setUser(null);
+        setUser(null);  
     }
 
     function linkClasses(type="null") {
