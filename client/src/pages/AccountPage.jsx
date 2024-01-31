@@ -1,9 +1,11 @@
-import React, { useContext } from 'react'
+import React, { useContext, useState } from 'react'
 import { UserContext } from '../UserContext';
 import { Link, Navigate, useParams } from 'react-router-dom';
+import axios from 'axios';
 
 const AccountPage = () => {
-    const { user, ready } = useContext(UserContext);
+    const [redirect, setRedirect] = useState(false);
+    const { user, ready, setUser } = useContext(UserContext);
 
     let { subpage } = useParams();
 	if (subpage === undefined) {
@@ -18,12 +20,22 @@ const AccountPage = () => {
         return <Navigate to="/login" />
     }
 
+    async function logout() {
+        await axios.post("/logout");
+        setRedirect(true);
+        setUser(null);
+    }
+
     function linkClasses(type="null") {
         let classes = "px-6 py-2";
         if (type === subpage) {
             classes += " bg-primary text-white rounded-xl";
         }
         return classes;
+    }
+
+    if (redirect) {
+        return <Navigate to="/" />
     }
 
     return (
@@ -44,8 +56,8 @@ const AccountPage = () => {
             </nav>
             {subpage === "profile" && (
                 <div className='text-center max-w-lg mx-auto'>
-                    Hello, {user.name}<br/> Email ({user.email})<br />
-                    <button className='primary max-w-sm'>Logout</button>
+                    Welcome to airbnb page {user.name}<br/> Logged in ({user.email})<br />
+                    <button onClick={logout} className='primary max-w-sm'>Logout</button>
                 </div>
             )}
 		</div>

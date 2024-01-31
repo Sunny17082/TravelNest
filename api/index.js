@@ -91,6 +91,10 @@ app.get("/profile", (req, res) => {
     }
 });
 
+app.post("/logout", (req, res) => {
+    res.cookie("token", "").json(true);
+});
+
 app.listen(PORT, () => {
     console.log("Server started on port 5000...");
 });
