@@ -22,6 +22,8 @@ app.use(express.json());
 // parses cookies attached to the client's request and makes them available in the req.cookies object.
 app.use(cookieParser());
 
+app.use("/uploads", express.static(__dirname+"/uploads"));
+
 //  It allows requests from http://localhost:5173 to access the server, including credentials in the requests
 app.use(
 	cors({
