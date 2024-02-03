@@ -46,7 +46,8 @@ const PlacesFormPage = () => {
 			checkIn,
 			checkOut,
 			maxGuests,
-        });
+		});
+		alert("new place added");
         setRedirect(true);
     }
     

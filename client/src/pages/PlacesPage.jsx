@@ -39,14 +39,14 @@ const PlacesPage = () => {
 					Add new place
 				</Link>
 			</div>
-			<div className="mt-4">
+			<div className="flex flex-col gap-4 mt-4">
 				{places.length > 0 &&
 					places.map((place) => (
 						<Link to={"/account/places/"+place._id} className="flex gap-4 bg-gray-200 p-4 rounded-2xl cursor-pointer">
-							<div className="w-32 h-32 shrink-0">
+							<div className="w-64 h-32 shrink-0">
 								{place.photos.length > 0 && (
 									<img
-										className="h-full object-cover rounded-xl"
+										className="w-full h-full object-cover rounded-xl border border-black"
 										src={
 											"http://localhost:5000/uploads/" +
 											place.photos[0]
