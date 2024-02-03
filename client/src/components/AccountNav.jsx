@@ -1,45 +1,22 @@
-import React, { useContext, useState } from 'react'
-import { UserContext } from '../UserContext';
-import { Link, Navigate, useParams } from 'react-router-dom';
-import axios from 'axios';
-import PlacesPage from './PlacesPage';
+import React from 'react'
+import { Link, useLocation } from 'react-router-dom';
 
-const AccountPage = () => {
-    const [redirect, setRedirect] = useState(false);
-    const { user, ready, setUser } = useContext(UserContext);
+const AccountNav = () => {
+    const { pathname } = useLocation();
+    let subpage = pathname.split("/")?.[2];
+    if (subpage === undefined) {
+        subpage = "profile";
+    }
 
-    let { subpage } = useParams();
-	if (subpage === undefined) {
-		subpage = "profile";
+    function linkClasses(type = "null") {
+		let classes = "inline-flex gap-1 px-6 py-2 rounded-xl";
+		if (type === subpage) {
+			classes += " bg-primary text-white";
+		} else {
+			classes += " bg-gray-200";
+		}
+		return classes;
 	}
-
-    if (!ready) {
-        return <div>Loading...</div>
-    }
-
-    if (ready && !user && !redirect) {
-        return <Navigate to="/login" />
-    }
-
-    async function logout() {
-        await axios.post("/logout");
-        setRedirect(true);
-        setUser(null);  
-    }
-
-    function linkClasses(type="null") {
-        let classes = "inline-flex gap-1 px-6 py-2 rounded-xl";
-        if (type === subpage) {
-            classes += " bg-primary text-white";
-        } else {
-            classes += " bg-gray-200"
-        }
-        return classes;
-    }
-
-    if (redirect) {
-        return <Navigate to="/" />
-    }
 
     return (
 		<div>
@@ -99,18 +76,8 @@ const AccountPage = () => {
 					My Accomodation
 				</Link>
 			</nav>
-			{subpage === "profile" && (
-				<div className="text-center max-w-lg mx-auto">
-					Welcome to airbnb page {user.name}
-					<br /> Logged in ({user.email})<br />
-					<button onClick={logout} className="primary max-w-sm">
-						Logout
-					</button>
-				</div>
-			)}
-			{subpage === "places" && <PlacesPage />}
 		</div>
 	);
 }
 
-export default AccountPage;
+export default AccountNav
