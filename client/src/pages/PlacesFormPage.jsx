@@ -16,6 +16,7 @@ const PlacesFormPage = () => {
 	const [checkIn, setCheckIn] = useState("");
 	const [checkOut, setCheckOut] = useState("");
 	const [maxGuests, setMaxGuests] = useState(1);
+	const [price, setPrice] = useState(5);
 	const [redirect, setRedirect] = useState(false);
 
 	useEffect(() => {
@@ -33,6 +34,7 @@ const PlacesFormPage = () => {
 			setCheckIn(data.checkIn);
 			setCheckOut(data.checkOut);
 			setMaxGuests(data.maxGuests);
+			setPrice(data.price);
 		});
 	}, [id]);
 
@@ -65,6 +67,7 @@ const PlacesFormPage = () => {
 			checkIn,
 			checkOut,
 			maxGuests,
+			price
 		};
 		if (id) {
 			// update
@@ -160,6 +163,13 @@ const PlacesFormPage = () => {
 						/>
 					</div>
 				</div>
+				{preInput("Price per night", "Add affordable price in INR")}
+				<input
+					type="number"
+					value={price}
+					onChange={(ev) => setPrice(ev.target.value)}
+					placeholder="6"
+				/>
 				<button className="primary">Save</button>
 			</form>
 		</>
