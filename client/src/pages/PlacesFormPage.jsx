@@ -1,12 +1,13 @@
-import { useState, React } from 'react';
+import { useState, React, useEffect } from "react";
 import Perks from "../components/Perks";
 import PhotosUploader from "../components/PhotosUploader";
 import axios from "axios";
-import AccountNav from '../components/AccountNav';
-import { Navigate } from 'react-router-dom';
+import AccountNav from "../components/AccountNav";
+import { Navigate, useParams } from "react-router-dom";
 
 const PlacesFormPage = () => {
-    const [title, setTitle] = useState("");
+	const { id } = useParams();
+	const [title, setTitle] = useState("");
 	const [address, setAddress] = useState("");
 	const [addedPhotos, setAddedPhotos] = useState([]);
 	const [description, setDescription] = useState("");
@@ -14,10 +15,28 @@ const PlacesFormPage = () => {
 	const [extraInfo, setExtraInfo] = useState("");
 	const [checkIn, setCheckIn] = useState("");
 	const [checkOut, setCheckOut] = useState("");
-    const [maxGuests, setMaxGuests] = useState(1);
-    const [redirect, setRedirect] = useState(false);
-    
-    function inputHeader(text) {
+	const [maxGuests, setMaxGuests] = useState(1);
+	const [redirect, setRedirect] = useState(false);
+
+	useEffect(() => {
+		if (!id) {
+			return;
+		}
+		axios.get("/places/" + id).then((response) => {
+			const { data } = response;
+			setTitle(data.title);
+			setAddress(data.address);
+			setAddedPhotos(data.photos);
+			setDescription(data.description);
+			setPerks(data.perks);
+			setExtraInfo(data.extraInfo);
+			setCheckIn(data.checkIn);
+			setCheckOut(data.checkOut);
+			setMaxGuests(data.maxGuests);
+		});
+	}, [id]);
+
+	function inputHeader(text) {
 		return <label className="text-2xl mt-4">{text}</label>;
 	}
 
@@ -34,9 +53,9 @@ const PlacesFormPage = () => {
 		);
 	}
 
-	async function addNewPlace(ev) {
+	async function savePlace(ev) {
 		ev.preventDefault();
-		await axios.post("/places", {
+		const placeData = {
 			title,
 			address,
 			addedPhotos,
@@ -46,19 +65,32 @@ const PlacesFormPage = () => {
 			checkIn,
 			checkOut,
 			maxGuests,
-		});
-		alert("new place added");
-        setRedirect(true);
-    }
-    
-    if (redirect) {
-        return <Navigate to={"/account/places"} />
-    }
+		};
+		if (id) {
+			// update
+			await axios.put("/places", {
+				id,
+				...placeData,
+			});
+			alert("place updated successfully");
+		} else {
+			// new place
+			await axios.post("/places", {
+				...placeData,
+			});
+			alert("new place added");
+		}
+		setRedirect(true);
+	}
 
-    return (
-        <>
-            <AccountNav />
-			<form onSubmit={addNewPlace}>
+	if (redirect) {
+		return <Navigate to={"/account/places"} />;
+	}
+
+	return (
+		<>
+			<AccountNav />
+			<form onSubmit={savePlace}>
 				{preInput(
 					"Title",
 					"title for your place, should be short and catchy as in advertisement"
@@ -132,6 +164,6 @@ const PlacesFormPage = () => {
 			</form>
 		</>
 	);
-}
+};
 
-export default PlacesFormPage
+export default PlacesFormPage;
