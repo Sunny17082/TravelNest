@@ -1,5 +1,6 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const IndexPage = () => {
 	const [places, setPlaces] = useState([]);
@@ -14,8 +15,8 @@ const IndexPage = () => {
 		<div className="mt-8 gap-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 max-h-fit">
 			{places.length > 0 &&
 				places.map((place) => (
-					<div>
-						<div className="bg-gray-500 mb-2 aspect-square rounded-2xl flex cursor-pointer">
+					<Link to={"/place/"+place._id}>
+						<div className="bg-gray-500 mb-2 aspect-square rounded-2xl flex">
 							{place.photos?.[0] && (
 								<img
 									className="rounded-2xl aspect-square object-cover"
@@ -32,7 +33,7 @@ const IndexPage = () => {
 						<h1 className="text-sm font-semibold">
 							₹{place.price}/night
 						</h1>
-					</div>
+					</Link>
 				))}
 		</div>
 	);

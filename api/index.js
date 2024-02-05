@@ -225,6 +225,11 @@ app.get("/places", async (req, res) => {
 	res.json(placeDoc);
 });
 
+app.get("/place/:id", async (req, res) => {
+	const { id } = req.params;
+	res.json(await Place.findById(id))
+});
+
 app.listen(PORT, () => {
 	console.log("Server started on port 5000...");
 });
