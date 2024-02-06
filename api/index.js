@@ -8,6 +8,7 @@ const download = require("image-downloader");
 const multer = require("multer");
 const User = require("./models/user");
 const Place = require("./models/place");
+const Booking = require("./models/booking")
 const cookieParser = require("cookie-parser");
 const fs = require("fs");
 const app = express();
@@ -40,6 +41,15 @@ mongoose
 	.connect(process.env.MONGO_URI)
 	.then(() => console.log("Connection successful..."))
 	.catch((err) => console.log(err));
+
+function getUserDataFromReq(req) {
+	return new Promise((resolve, reject) => {
+		jwt.verify(req.cookies.token, secret, {}, async (err, userData) => {
+			if (err) throw err;
+			resolve(userData);
+		});
+	});
+}
 
 app.post("/register", async (req, res) => {
 	const { name, email, password } = req.body;
@@ -145,7 +155,7 @@ app.post("/places", (req, res) => {
 		checkIn,
 		checkOut,
 		maxGuests,
-		price
+		price,
 	} = req.body;
 
 	jwt.verify(token, secret, {}, async (err, userData) => {
@@ -161,7 +171,7 @@ app.post("/places", (req, res) => {
 			checkIn,
 			checkOut,
 			maxGuests,
-			price
+			price,
 		});
 		res.json(placeDoc);
 	});
@@ -195,7 +205,7 @@ app.put("/places", (req, res) => {
 		checkIn,
 		checkOut,
 		maxGuests,
-		price
+		price,
 	} = req.body;
 
 	jwt.verify(token, secret, {}, async (err, userData) => {
@@ -212,7 +222,7 @@ app.put("/places", (req, res) => {
 				checkIn,
 				checkOut,
 				maxGuests,
-				price
+				price,
 			});
 			await placeDoc.save();
 			res.json(placeDoc);
@@ -227,8 +237,32 @@ app.get("/places", async (req, res) => {
 
 app.get("/place/:id", async (req, res) => {
 	const { id } = req.params;
-	res.json(await Place.findById(id))
+	res.json(await Place.findById(id));
 });
+
+app.post("/bookings", async (req, res) => {
+	const userData = await getUserDataFromReq(req);
+	const { place, checkIn, checkOut, numberOfGuests, name, phone, price } = req.body;
+	Booking.create({
+		place,
+		checkIn,
+		checkOut,
+		numberOfGuests,
+		name,
+		phone,
+		price,
+		user: userData.id
+	}).then((doc) => {
+		res.status(200).json(doc);
+	}).catch((err) => {
+		res.status(400).json(err);
+	});
+});
+
+app.get("/bookings", async (req, res) => {
+	const userData = await getUserDataFromReq(req);
+	res.json(await Booking.find({user:userData.id}).populate("place"));
+})
 
 app.listen(PORT, () => {
 	console.log("Server started on port 5000...");
