@@ -18,6 +18,7 @@ const Perks = ({ selected, onChange }) => {
 					checked={selected.includes("wi-fi")}
 					name="wi-fi"
 					onChange={handleCbClick}
+					className="accent-black w-4 h-4 shrink-0"
 				/>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -41,6 +42,7 @@ const Perks = ({ selected, onChange }) => {
 					checked={selected.includes("parking")}
 					name="parking"
 					onChange={handleCbClick}
+					className="accent-black w-4 h-4 shrink-0"
 				/>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -64,6 +66,7 @@ const Perks = ({ selected, onChange }) => {
 					checked={selected.includes("tv")}
 					name="tv"
 					onChange={handleCbClick}
+					className="accent-black w-4 h-4 shrink-0"
 				/>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -87,6 +90,7 @@ const Perks = ({ selected, onChange }) => {
 					checked={selected.includes("pets")}
 					name="pets"
 					onChange={handleCbClick}
+					className="accent-black w-4 h-4 shrink-0"
 				/>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -110,6 +114,7 @@ const Perks = ({ selected, onChange }) => {
 					checked={selected.includes("entrance")}
 					name="entrance"
 					onChange={handleCbClick}
+					className="accent-black w-4 h-4 shrink-0"
 				/>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -133,6 +138,7 @@ const Perks = ({ selected, onChange }) => {
 					checked={selected.includes("music")}
 					name="music"
 					onChange={handleCbClick}
+					className="accent-black w-4 h-4 shrink-0"
 				/>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
