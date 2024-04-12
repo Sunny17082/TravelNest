@@ -8,8 +8,9 @@ const download = require("image-downloader");
 const multer = require("multer");
 const User = require("./models/user");
 const Place = require("./models/place");
-const Booking = require("./models/booking")
+const Booking = require("./models/booking");
 const cookieParser = require("cookie-parser");
+const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 const app = express();
 
@@ -36,11 +37,11 @@ app.use(
 	})
 );
 
-// connecting the database
-mongoose
-	.connect(process.env.MONGO_URI)
-	.then(() => console.log("Connection successful..."))
-	.catch((err) => console.log(err));
+cloudinary.config({
+	cloud_name: process.env.CLOUD_NAME,
+	api_key: process.env.API_KEY,
+	api_secret: process.env.API_SECRET,
+});
 
 function getUserDataFromReq(req) {
 	return new Promise((resolve, reject) => {
@@ -51,7 +52,11 @@ function getUserDataFromReq(req) {
 	});
 }
 
-app.post("/register", async (req, res) => {
+app.post("/api/register", async (req, res) => {
+	mongoose
+		.connect(process.env.MONGO_URI)
+		.then(() => console.log("Connection successful..."))
+		.catch((err) => console.log(err));
 	const { name, email, password } = req.body;
 	try {
 		const userDoc = await User.create({
@@ -66,7 +71,11 @@ app.post("/register", async (req, res) => {
 	}
 });
 
-app.post("/login", async (req, res) => {
+app.post("/api/login", async (req, res) => {
+	mongoose
+		.connect(process.env.MONGO_URI)
+		.then(() => console.log("Connection successful..."))
+		.catch((err) => console.log(err));
 	const { email, password } = req.body;
 	const userDoc = await User.findOne({
 		email,
@@ -94,7 +103,11 @@ app.post("/login", async (req, res) => {
 	}
 });
 
-app.get("/profile", (req, res) => {
+app.get("/api/profile", (req, res) => {
+	mongoose
+		.connect(process.env.MONGO_URI)
+		.then(() => console.log("Connection successful..."))
+		.catch((err) => console.log(err));
 	const { token } = req.cookies;
 	if (token) {
 		// to verify the token and send user data to client
@@ -108,42 +121,63 @@ app.get("/profile", (req, res) => {
 	}
 });
 
-app.post("/logout", (req, res) => {
+app.post("/api/logout", (req, res) => {
 	res.cookie("token", "").json(true);
 });
 
-app.post("/upload-by-link", async (req, res) => {
+async function uploadToCloudinary(path, originalFilename) {
+	const parts = originalFilename.split(".");
+	const ext = parts[parts.length - 1];
+	const newFileName = Date.now() + "." + ext;
+	const filePath = await cloudinary.uploader.upload(
+		path,
+		function (error, result) {
+			console.log(result);
+		}
+	);
+	return filePath.secure_url;
+}
+
+app.post("/api/upload-by-link", async (req, res) => {
 	const { link } = req.body;
 
 	const newName = "img" + Date.now() + ".png";
 	const options = {
 		url: link,
-		dest: __dirname + "/uploads/" + newName,
+		dest: "/tmp/" + newName,
 	};
 	try {
 		await download.image(options);
-		res.json(newName);
+		const url = await uploadToCloudinary("/tmp/" + newName, newName);
+		res.json(url);
 	} catch (err) {
 		console.log(err);
 	}
 });
 
-const photoMiddleware = multer({ dest: "uploads/" });
+const photosMiddleware = multer({ dest: "/tmp" });
 
-app.post("/upload", photoMiddleware.array("photos", 10), (req, res) => {
-	const uploadedFiles = [];
-	for (let i = 0; i < req.files.length; i++) {
-		const { path, originalname } = req.files[i];
-		const parts = originalname.split("/");
-		const ext = parts[parts.length - 1];
-		const newPath = path + "." + ext;
-		fs.renameSync(path, newPath);
-		uploadedFiles.push(newPath.replace("uploads", ""));
+app.post("/api/upload", photosMiddleware.array("photos", 100), async (req, res) => {
+		const uploadedFiles = [];
+		for (let i = 0; i < req.files.length; i++) {
+			const { path, originalname } = req.files[i];
+			// const parts = originalname.split("/");
+			// const ext = parts[parts.length - 1];
+			// const newPath = path + "." + ext;
+			// fs.renameSync(path, newPath);
+			// uploadedFiles.push(newPath.replace("uploads", ""));
+			const url = await uploadToCloudinary(path, originalname);
+			uploadedFiles.push(url);
+		}
+		res.json(uploadedFiles);
 	}
-	res.json(uploadedFiles);
-});
+);
 
-app.post("/places", (req, res) => {
+app.post("/api/places", (req, res) => {
+	mongoose
+		.connect(process.env.MONGO_URI)
+		.then(() => console.log("Connection successful..."))
+		.catch((err) => console.log(err));
 	const { token } = req.cookies;
 	const {
 		title,
@@ -177,7 +211,11 @@ app.post("/places", (req, res) => {
 	});
 });
 
-app.get("/user-places", (req, res) => {
+app.get("/api/user-places", (req, res) => {
+	mongoose
+		.connect(process.env.MONGO_URI)
+		.then(() => console.log("Connection successful..."))
+		.catch((err) => console.log(err));
 	const { token } = req.cookies;
 
 	jwt.verify(token, secret, {}, async (err, userData) => {
@@ -187,12 +225,20 @@ app.get("/user-places", (req, res) => {
 	});
 });
 
-app.get("/places/:id", async (req, res) => {
+app.get("/api/places/:id", async (req, res) => {
+	mongoose
+		.connect(process.env.MONGO_URI)
+		.then(() => console.log("Connection successful..."))
+		.catch((err) => console.log(err));
 	const { id } = req.params;
 	res.json(await Place.findById(id));
 });
 
-app.put("/places", (req, res) => {
+app.put("/api/places", (req, res) => {
+	mongoose
+		.connect(process.env.MONGO_URI)
+		.then(() => console.log("Connection successful..."))
+		.catch((err) => console.log(err));
 	const { token } = req.cookies;
 	const {
 		id,
@@ -230,19 +276,32 @@ app.put("/places", (req, res) => {
 	});
 });
 
-app.get("/places", async (req, res) => {
+app.get("/api/places", async (req, res) => {
+	mongoose
+		.connect(process.env.MONGO_URI)
+		.then(() => console.log("Connection successful..."))
+		.catch((err) => console.log(err));
 	const placeDoc = await Place.find();
 	res.json(placeDoc);
 });
 
-app.get("/place/:id", async (req, res) => {
+app.get("/api/place/:id", async (req, res) => {
+	mongoose
+		.connect(process.env.MONGO_URI)
+		.then(() => console.log("Connection successful..."))
+		.catch((err) => console.log(err));
 	const { id } = req.params;
 	res.json(await Place.findById(id));
 });
 
-app.post("/bookings", async (req, res) => {
+app.post("/api/bookings", async (req, res) => {
+	mongoose
+		.connect(process.env.MONGO_URI)
+		.then(() => console.log("Connection successful..."))
+		.catch((err) => console.log(err));
 	const userData = await getUserDataFromReq(req);
-	const { place, checkIn, checkOut, numberOfGuests, name, phone, price } = req.body;
+	const { place, checkIn, checkOut, numberOfGuests, name, phone, price } =
+		req.body;
 	Booking.create({
 		place,
 		checkIn,
@@ -251,18 +310,24 @@ app.post("/bookings", async (req, res) => {
 		name,
 		phone,
 		price,
-		user: userData.id
-	}).then((doc) => {
-		res.status(200).json(doc);
-	}).catch((err) => {
-		res.status(400).json(err);
-	});
+		user: userData.id,
+	})
+		.then((doc) => {
+			res.status(200).json(doc);
+		})
+		.catch((err) => {
+			res.status(400).json(err);
+		});
 });
 
-app.get("/bookings", async (req, res) => {
+app.get("/api/bookings", async (req, res) => {
+	mongoose
+		.connect(process.env.MONGO_URI)
+		.then(() => console.log("Connection successful..."))
+		.catch((err) => console.log(err));
 	const userData = await getUserDataFromReq(req);
-	res.json(await Booking.find({user:userData.id}).populate("place"));
-})
+	res.json(await Booking.find({ user: userData.id }).populate("place"));
+});
 
 app.listen(PORT, () => {
 	console.log("Server started on port 5000...");

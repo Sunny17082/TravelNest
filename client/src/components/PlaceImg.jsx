@@ -1,4 +1,5 @@
 import React from 'react'
+import Image from './Image';
 
 const PlaceImg = ({ place, index=0, className=null }) => {
 
@@ -12,10 +13,9 @@ const PlaceImg = ({ place, index=0, className=null }) => {
 
     return (
 		<div>
-			<img
+			<Image
 				className={className}
-				src={"http://localhost:5000/uploads/" + place.photos[index]}
-				alt=""
+				src={place.photos[index]}
 			/>
 		</div>
     );

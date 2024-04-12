@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Image from "./Image";
 
 const PlaceGallery = ({ place }) => {
 	const [showAllPhotos, setShowAllPhotos] = useState(false);
@@ -35,10 +36,10 @@ const PlaceGallery = ({ place }) => {
 					{place?.photos?.length > 0 &&
 						place.photos.map((photo) => (
 							<div className="flex justify-center lg:px-64">
-								<img
+								<Image
 									className="rounded-2xl"
 									src={
-										"http://localhost:5000/uploads/" + photo
+										photo
 									}
 								/>
 							</div>
@@ -55,46 +56,40 @@ const PlaceGallery = ({ place }) => {
 					<div>
 						{place.photos?.[0] && (
 							<div>
-								<img
+								<Image
 									onClick={() => {
 										setShowAllPhotos(true);
 									}}
 									className="aspect-square object-cover cursor-pointer"
 									src={
-										"http://localhost:5000/uploads/" +
 										place.photos[0]
 									}
-									alt=""
 								/>
 							</div>
 						)}
 					</div>
 					<div className="grid">
 						{place.photos?.[1] && (
-							<img
+							<Image
 								onClick={() => {
 									setShowAllPhotos(true);
 								}}
 								className="aspect-square object-cover cursor-pointer"
 								src={
-									"http://localhost:5000/uploads/" +
 									place.photos[1]
 								}
-								alt=""
 							/>
 						)}
 						<div className="overflow-hidden">
 							{place.photos?.[2] && (
-								<img
+								<Image
 									onClick={() => {
 										setShowAllPhotos(true);
 									}}
 									className="aspect-square object-cover relative top-2 cursor-pointer"
 									src={
-										"http://localhost:5000/uploads/" +
 										place.photos[2]
 									}
-									alt=""
 								/>
 							)}
 						</div>
