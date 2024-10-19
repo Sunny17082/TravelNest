@@ -227,6 +227,7 @@ app.post(
 	"/webhook",
 	express.raw({ type: "application/json" }),
 	async (req, res) => {
+		console.log("Webhook received");
 		const sig = req.headers["stripe-signature"];
 		let event;
 
@@ -246,15 +247,12 @@ app.post(
 
 		if (event.type === "checkout.session.completed") {
 			const session = event.data.object;
+			const bookingId = session.metadata.bookingId;
 
 			try {
-				await mongoose.connect(process.env.MONGO_URI);
-
-				await Booking.findOneAndUpdate(
-					{ bookingId: session.id },
-					{ paymentStatus: "completed" }
-				);
-
+				await Booking.findByIdAndUpdate(bookingId, {
+					paymentStatus: "completed",
+				});
 				console.log("Booking updated to completed");
 				res.json({ received: true });
 			} catch (err) {
