@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { differenceInCalendarDays } from "date-fns";
 import axios from "axios";
-import { Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { UserContext } from "../UserContext";
 import { loadStripe } from "@stripe/stripe-js";
 
@@ -11,8 +11,8 @@ const BookingOption = ({ place }) => {
 	const [numberOfGuests, setNumberOfGuests] = useState(1);
 	const [name, setName] = useState("");
 	const [phone, setPhone] = useState("");
-	const [redirect, setRedirect] = useState("");
 	const { user } = useContext(UserContext);
+	const navigate = useNavigate();
 
 	useEffect(() => {
 		if (user) {
@@ -50,38 +50,57 @@ const BookingOption = ({ place }) => {
 			return;
 		}
 
-		const stripe = await loadStripe(
-			"pk_test_51PXNSJRua2fNuy2GVPYspgKS67PUSpmYDUmoy7edHIY1oy3wdYTmdpwEUOHpVjk6W9PIJEIQDtzSFIQF5ztX8SFK00xGBIzivc"
-		);
+		try {
+			const bookingResponse = await axios.post("/bookings", {
+				place: place._id,
+				checkIn,
+				checkOut,
+				numberOfGuests,
+				name,
+				phone,
+				price: numberOfDays * place.price,
+			});
 
-		const response = await axios.post("/create-checkout-session", {
-			checkIn,
-			checkOut,
-			numberOfGuests,
-			name,
-			phone,
-			place: place._id,
-			price: numberOfDays * place.price,
-		});
+			const bookingId = bookingResponse.data._id;
 
-		const session = response.data;
+			const stripe = await loadStripe(
+				import.meta.env.VITE_APP_STRIPE_PUBLIC_KEY
+			);
+			const response = await axios.post("/create-checkout-session", {
+				bookingId,
+				place: place._id,
+				checkIn,
+				checkOut,
+				numberOfGuests,
+				name,
+				phone,
+				price: numberOfDays * place.price,
+			});
 
-		const result = await stripe.redirectToCheckout({
-			sessionId: session.id,
-		});
+			const session = response.data;
 
-		if (result.error) {
-			alert(result.error.message);
-		};
-	}
+			if (session.url) {
+				window.location = session.url;
+			} else {
+				const result = await stripe.redirectToCheckout({
+					sessionId: session.id,
+				});
 
-	if (redirect) {
-		return <Navigate to={redirect} />;
-	}
+				if (result.error) {
+					alert(result.error.message);
+				}
+			}
+		} catch (error) {
+			console.error("Error during booking process:", error);
+			alert(
+				"An error occurred during the booking process. Please try again."
+			);
+		}
+	};
 
 	return (
 		<>
-			<div className=" h-min bg-white p-4 rounded-2xl shadow">
+			<div className="h-min bg-white p-4 rounded-2xl shadow">
 				<div className="text-2xl text-center font-semibold">
 					Price: ₹{place.price}/night
 				</div>
