@@ -19,7 +19,7 @@ const BookingsPage = () => {
 			<div>
 				{bookings?.length > 0 &&
 					bookings.map((booking) => (
-						<Link to={`/account/bookings/${booking.bookingId}`} className="flex gap-4 mb-2 bg-gray-200 rounded-2xl overflow-hidden">
+						<Link to={`/account/bookings/${booking._id}`} className="flex gap-4 mb-2 bg-gray-200 rounded-2xl overflow-hidden">
 							<div className="flex w-48 shrink-0">
 								<PlaceImg
 									place={booking.place}

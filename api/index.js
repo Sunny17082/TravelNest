@@ -205,8 +205,8 @@ app.post("/api/create-checkout-session", async (req, res) => {
 				},
 			],
 			mode: "payment",
-			success_url: `${process.env.FRONTEND_URL}/booking/${booking._id}`,
-			cancel_url: `${process.env.FRONTEND_URL}/booking/${booking._id}`,
+			success_url: `${process.env.FRONTEND_URL}/account/bookings/${booking._id}`,
+			cancel_url: `${process.env.FRONTEND_URL}/account/bookings/${booking._id}`,
 			metadata: {
 				bookingId: booking._id.toString(),
 			},

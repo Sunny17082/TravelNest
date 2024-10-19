@@ -15,7 +15,7 @@ const BookingPage = () => {
 
 		const loadBooking = async () => {
 			try {
-				const response = await axios.get(`/api/bookings/${id}`);
+				const response = await axios.get(`/bookings/${id}`);
 				if (response.data) {
 					setBooking(response.data);
 				}
@@ -98,7 +98,7 @@ const BookingPage = () => {
 					<p className="font-semibold">Payment Pending</p>
 					<p className="text-sm">
 						Your booking is not confirmed yet. Please complete the
-						payment to secure your reservation.
+						payment to secure your place.
 					</p>
 					<button
 						onClick={handlePayment}
