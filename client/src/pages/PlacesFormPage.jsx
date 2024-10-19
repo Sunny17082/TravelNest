@@ -17,7 +17,10 @@ const PlacesFormPage = () => {
 	const [checkOut, setCheckOut] = useState("");
 	const [maxGuests, setMaxGuests] = useState(1);
 	const [price, setPrice] = useState(5);
+	const [selectedTags, setSelectedTags] = useState([]);
 	const [redirect, setRedirect] = useState(false);
+
+	const tags = ["Beach", "Mountain", "City", "Countryside", "Historic"];
 
 	useEffect(() => {
 		if (!id) {
@@ -35,6 +38,7 @@ const PlacesFormPage = () => {
 			setCheckOut(data.checkOut);
 			setMaxGuests(data.maxGuests);
 			setPrice(data.price);
+			setSelectedTags(data.tags || []);
 		});
 	}, [id]);
 
@@ -55,6 +59,12 @@ const PlacesFormPage = () => {
 		);
 	}
 
+	const handleTagClick = (tag) => {
+		setSelectedTags((prev) =>
+			prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+		);
+	};
+
 	async function savePlace(ev) {
 		ev.preventDefault();
 		const placeData = {
@@ -67,7 +77,8 @@ const PlacesFormPage = () => {
 			checkIn,
 			checkOut,
 			maxGuests,
-			price
+			price,
+			tags: selectedTags,
 		};
 		if (id) {
 			// update
@@ -122,6 +133,30 @@ const PlacesFormPage = () => {
 					onChange={(ev) => setDescription(ev.target.value)}
 					placeholder="description"
 				></textarea>
+				{preInput("Tags", "Select tags that best describe your place")}
+				<div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+					{tags.map((tag) => (
+						<label
+							key={tag}
+							className={`
+                                border p-4 flex rounded-2xl gap-2 items-center cursor-pointer
+                                ${
+									selectedTags.includes(tag)
+										? "border-primary bg-primary text-white"
+										: "border-gray-300"
+								}
+                            `}
+						>
+							<input
+								type="checkbox"
+								checked={selectedTags.includes(tag)}
+								onChange={() => handleTagClick(tag)}
+								className="hidden"
+							/>
+							<span>{tag}</span>
+						</label>
+					))}
+				</div>
 				{preInput("Perks", "select all the perks of your place")}
 				<Perks selected={perks} onChange={setPerks} />
 				{preInput("Extra info", "house rules, etc...")}
@@ -170,7 +205,7 @@ const PlacesFormPage = () => {
 					onChange={(ev) => setPrice(ev.target.value)}
 					placeholder="6"
 				/>
-				<button className="primary">Save</button>
+				<button className="primary mt-4">Save</button>
 			</form>
 		</>
 	);

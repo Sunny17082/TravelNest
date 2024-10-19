@@ -5,10 +5,13 @@ const dotenv = require("dotenv").config();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const download = require("image-downloader");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const multer = require("multer");
 const User = require("./models/user");
 const Place = require("./models/place");
 const Booking = require("./models/booking");
+const Review = require("./models/review");
+const Order = require("./models/order");
 const cookieParser = require("cookie-parser");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
@@ -37,6 +40,11 @@ app.use(
 	})
 );
 
+mongoose
+	.connect(process.env.MONGO_URI)
+	.then(() => console.log("Connection successful..."))
+	.catch((err) => console.log(err));
+
 cloudinary.config({
 	cloud_name: process.env.CLOUD_NAME,
 	api_key: process.env.API_KEY,
@@ -53,10 +61,6 @@ function getUserDataFromReq(req) {
 }
 
 app.post("/api/register", async (req, res) => {
-	mongoose
-		.connect(process.env.MONGO_URI)
-		.then(() => console.log("Connection successful..."))
-		.catch((err) => console.log(err));
 	const { name, email, password } = req.body;
 	try {
 		const userDoc = await User.create({
@@ -72,10 +76,6 @@ app.post("/api/register", async (req, res) => {
 });
 
 app.post("/api/login", async (req, res) => {
-	mongoose
-		.connect(process.env.MONGO_URI)
-		.then(() => console.log("Connection successful..."))
-		.catch((err) => console.log(err));
 	const { email, password } = req.body;
 	const userDoc = await User.findOne({
 		email,
@@ -104,10 +104,6 @@ app.post("/api/login", async (req, res) => {
 });
 
 app.get("/api/profile", (req, res) => {
-	mongoose
-		.connect(process.env.MONGO_URI)
-		.then(() => console.log("Connection successful..."))
-		.catch((err) => console.log(err));
 	const { token } = req.cookies;
 	if (token) {
 		// to verify the token and send user data to client
@@ -173,11 +169,137 @@ app.post("/api/upload", photosMiddleware.array("photos", 100), async (req, res) 
 	}
 );
 
+app.post("/api/create-checkout-session", async (req, res) => {
+	try {
+		await mongoose.connect(process.env.MONGO_URI);
+
+		const { price, place, checkIn, checkOut, numberOfGuests, name, phone } =
+			req.body;
+		const userData = await getUserDataFromReq(req);
+
+		// Create a pending booking
+		const booking = await Booking.create({
+			place,
+			checkIn,
+			checkOut,
+			numberOfGuests,
+			name,
+			phone,
+			user: userData.id,
+			price,
+			paymentStatus: "pending",
+		});
+
+		const session = await stripe.checkout.sessions.create({
+			payment_method_types: ["card"],
+			line_items: [
+				{
+					price_data: {
+						currency: "inr",
+						product_data: {
+							name: "Booking",
+						},
+						unit_amount: price * 100,
+					},
+					quantity: 1,
+				},
+			],
+			mode: "payment",
+			success_url: `${process.env.FRONTEND_URL}/booking/${booking._id}`,
+			cancel_url: `${process.env.FRONTEND_URL}/booking/${booking._id}`,
+			metadata: {
+				bookingId: booking._id.toString(),
+			},
+		});
+
+		// Update the booking with the Stripe session ID
+		await Booking.findByIdAndUpdate(booking._id, { bookingId: session.id });
+
+		res.json({ id: session.id, url: session.url });
+	} catch (err) {
+		console.error("Error creating checkout session:", err);
+		res.status(500).json({ error: "Failed to create checkout session" });
+	}
+});
+
+// Webhook endpoint
+app.post(
+	"/webhook",
+	express.raw({ type: "application/json" }),
+	async (req, res) => {
+		const sig = req.headers["stripe-signature"];
+		let event;
+
+		try {
+			event = stripe.webhooks.constructEvent(
+				req.body,
+				sig,
+				process.env.STRIPE_WEBHOOK_SECRET
+			);
+		} catch (err) {
+			console.error(
+				"Webhook signature verification failed:",
+				err.message
+			);
+			return res.sendStatus(400);
+		}
+
+		if (event.type === "checkout.session.completed") {
+			const session = event.data.object;
+
+			try {
+				await mongoose.connect(process.env.MONGO_URI);
+
+				await Booking.findOneAndUpdate(
+					{ bookingId: session.id },
+					{ paymentStatus: "completed" }
+				);
+
+				console.log("Booking updated to completed");
+				res.json({ received: true });
+			} catch (err) {
+				console.error("Error updating booking:", err);
+				res.status(500).json({ error: "Failed to update booking" });
+			}
+		} else if (event.type === "checkout.session.expired") {
+			const session = event.data.object;
+
+			try {
+				await mongoose.connect(process.env.MONGO_URI);
+
+				await Booking.findOneAndUpdate(
+					{ bookingId: session.id },
+					{ paymentStatus: "failed" }
+				);
+
+				console.log("Booking updated to failed");
+				res.json({ received: true });
+			} catch (err) {
+				console.error("Error updating booking:", err);
+				res.status(500).json({ error: "Failed to update booking" });
+			}
+		} else {
+			res.json({ received: true });
+		}
+	}
+);
+
+// Endpoint to get a single booking
+app.get("/api/bookings/:id", async (req, res) => {
+	try {
+		await mongoose.connect(process.env.MONGO_URI);
+		const booking = await Booking.findById(req.params.id).populate("place");
+		if (!booking) {
+			return res.status(404).json({ error: "Booking not found" });
+		}
+		res.json(booking);
+	} catch (err) {
+		console.error("Error fetching booking:", err);
+		res.status(500).json({ error: "Failed to fetch booking" });
+	}
+});
+
 app.post("/api/places", (req, res) => {
-	mongoose
-		.connect(process.env.MONGO_URI)
-		.then(() => console.log("Connection successful..."))
-		.catch((err) => console.log(err));
 	const { token } = req.cookies;
 	const {
 		title,
@@ -190,6 +312,7 @@ app.post("/api/places", (req, res) => {
 		checkOut,
 		maxGuests,
 		price,
+		tags
 	} = req.body;
 
 	jwt.verify(token, secret, {}, async (err, userData) => {
@@ -206,16 +329,13 @@ app.post("/api/places", (req, res) => {
 			checkOut,
 			maxGuests,
 			price,
+			tags
 		});
 		res.json(placeDoc);
 	});
 });
 
 app.get("/api/user-places", (req, res) => {
-	mongoose
-		.connect(process.env.MONGO_URI)
-		.then(() => console.log("Connection successful..."))
-		.catch((err) => console.log(err));
 	const { token } = req.cookies;
 
 	jwt.verify(token, secret, {}, async (err, userData) => {
@@ -226,19 +346,11 @@ app.get("/api/user-places", (req, res) => {
 });
 
 app.get("/api/places/:id", async (req, res) => {
-	mongoose
-		.connect(process.env.MONGO_URI)
-		.then(() => console.log("Connection successful..."))
-		.catch((err) => console.log(err));
 	const { id } = req.params;
 	res.json(await Place.findById(id));
 });
 
 app.put("/api/places", (req, res) => {
-	mongoose
-		.connect(process.env.MONGO_URI)
-		.then(() => console.log("Connection successful..."))
-		.catch((err) => console.log(err));
 	const { token } = req.cookies;
 	const {
 		id,
@@ -252,6 +364,7 @@ app.put("/api/places", (req, res) => {
 		checkOut,
 		maxGuests,
 		price,
+		tags
 	} = req.body;
 
 	jwt.verify(token, secret, {}, async (err, userData) => {
@@ -269,6 +382,7 @@ app.put("/api/places", (req, res) => {
 				checkOut,
 				maxGuests,
 				price,
+				tags
 			});
 			await placeDoc.save();
 			res.json(placeDoc);
@@ -276,29 +390,67 @@ app.put("/api/places", (req, res) => {
 	});
 });
 
+app.delete("/api/place/:id", async (req, res) => {	
+	try {
+		const { token } = req.cookies;
+		const { id } = req.params;
+
+		jwt.verify(token, secret, {}, async (err, userData) => {
+			if (err) throw err;
+			const placeDoc = await Place.findByIdAndDelete(id);
+			res.json(placeDoc);
+		});
+	} catch (err) {
+		console.log(err);
+		res.status(400).json(err);
+	}
+})
+
 app.get("/api/places", async (req, res) => {
-	mongoose
-		.connect(process.env.MONGO_URI)
-		.then(() => console.log("Connection successful..."))
-		.catch((err) => console.log(err));
-	const placeDoc = await Place.find();
-	res.json(placeDoc);
+	try {
+		const { search, sort, minPrice, maxPrice } = req.query;
+		let query = {};
+		let sortOption = {};
+
+		// Search functionality
+		if (search) {
+			query = {
+				$or: [
+					{ title: { $regex: search, $options: "i" } },
+					{ address: { $regex: search, $options: "i" } },
+					{ tags: { $in: [new RegExp(search, "i")] } },
+				],
+			};
+		}
+
+		// Price range filter
+		if (minPrice || maxPrice) {
+			query.price = {};
+			if (minPrice) query.price.$gte = parseInt(minPrice);
+			if (maxPrice) query.price.$lte = parseInt(maxPrice);
+		}
+
+		// Sorting
+		if (sort === "asc") {
+			sortOption = { price: 1 };
+		} else if (sort === "desc") {
+			sortOption = { price: -1 };
+		}
+
+		const places = await Place.find(query).sort(sortOption);
+		res.json(places);
+	} catch (error) {
+		console.error("Error fetching places:", error);
+		res.status(500).json({ message: "Error fetching places" });
+	}
 });
 
 app.get("/api/place/:id", async (req, res) => {
-	mongoose
-		.connect(process.env.MONGO_URI)
-		.then(() => console.log("Connection successful..."))
-		.catch((err) => console.log(err));
 	const { id } = req.params;
 	res.json(await Place.findById(id));
 });
 
 app.post("/api/bookings", async (req, res) => {
-	mongoose
-		.connect(process.env.MONGO_URI)
-		.then(() => console.log("Connection successful..."))
-		.catch((err) => console.log(err));
 	const userData = await getUserDataFromReq(req);
 	const { place, checkIn, checkOut, numberOfGuests, name, phone, price } =
 		req.body;
@@ -321,12 +473,57 @@ app.post("/api/bookings", async (req, res) => {
 });
 
 app.get("/api/bookings", async (req, res) => {
-	mongoose
-		.connect(process.env.MONGO_URI)
-		.then(() => console.log("Connection successful..."))
-		.catch((err) => console.log(err));
 	const userData = await getUserDataFromReq(req);
 	res.json(await Booking.find({ user: userData.id }).populate("place"));
+});
+
+app.get("/api/reviews/:placeId", async (req, res) => {
+	try {
+		const { placeId } = req.params;
+		const reviews = await Review.find({ place: placeId }).populate(
+			"user",
+			"name"
+		);
+		res.json(reviews);
+	} catch (error) {
+		res.status(500).json({
+			message: "Error fetching reviews",
+			error: error.message,
+		});
+	}
+});
+
+app.post("/api/reviews/:placeId", async (req, res) => {
+	try {
+		const { placeId } = req.params;
+		const { rating, comment } = req.body;
+		const user = await getUserDataFromReq(req);
+
+		console.log(user);
+
+		const newReview = await Review.create({
+			place: placeId,
+			rating,
+			comment,
+			user: user.id,
+		});
+
+		const place = await Place.findById(placeId);
+		const reviews = await Review.find({ place: placeId });
+		const totalRating = reviews.reduce(
+			(sum, review) => sum + review.rating,
+			0
+		);
+		place.rating = totalRating / reviews.length;
+		await place.save();
+
+		res.status(201).json(newReview);
+	} catch (error) {
+		res.status(500).json({
+			message: "Error creating review",
+			error: error.message,
+		});
+	}
 });
 
 app.listen(PORT, () => {

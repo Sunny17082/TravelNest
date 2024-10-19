@@ -1,83 +1,75 @@
-import React from 'react'
-import { Link, useLocation } from 'react-router-dom';
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import { User, ListTodo, HomeIcon } from "lucide-react";
 
 const AccountNav = () => {
-    const { pathname } = useLocation();
-    let subpage = pathname.split("/")?.[2];
-    if (subpage === undefined) {
-        subpage = "profile";
-    }
+	const { pathname } = useLocation();
+	const subpage = pathname.split("/")?.[2] || "profile";
 
-    function linkClasses(type = "null") {
-		let classes = "inline-flex gap-1 px-6 py-2 rounded-xl";
-		if (type === subpage) {
-			classes += " bg-primary text-white";
-		} else {
-			classes += " bg-gray-200";
-		}
-		return classes;
-	}
+	const navItems = [
+		{
+			label: "My Profile",
+			path: "/account",
+			icon: User,
+			id: "profile",
+		},
+		{
+			label: "My Bookings",
+			path: "/account/bookings",
+			icon: ListTodo,
+			id: "bookings",
+		},
+		{
+			label: "My Accommodations",
+			path: "/account/places",
+			icon: HomeIcon,
+			id: "places",
+		},
+	];
 
-    return (
-		<div>
-			<nav className="w-full flex mt-8 mb-8 gap-4 justify-center text-sm lg:text-md md:text-md">
-				<Link className={linkClasses("profile")} to="/account">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						fill="none"
-						viewBox="0 0 24 24"
-						strokeWidth={1.5}
-						stroke="currentColor"
-						className="w-6 h-6"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
-						/>
-					</svg>
-					My Profile
-				</Link>
-				<Link
-					className={linkClasses("bookings")}
-					to="/account/bookings"
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						fill="none"
-						viewBox="0 0 24 24"
-						strokeWidth={1.5}
-						stroke="currentColor"
-						className="w-6 h-6"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
-						/>
-					</svg>
-					My Bookings
-				</Link>
-				<Link className={linkClasses("places")} to="/account/places">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						fill="none"
-						viewBox="0 0 24 24"
-						strokeWidth={1.5}
-						stroke="currentColor"
-						className="w-6 h-6"
-					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819"
-						/>
-					</svg>
-					My Accomodation
-				</Link>
+	const isActive = (type) => type === subpage;
+
+	return (
+		<div className="bg-white/80 backdrop-blur-sm shadow-sm my-5">
+			<nav className="max-w-4xl mx-auto px-4">
+				<div className="flex items-center justify-center gap-2 py-4">
+					{navItems.map((item) => (
+						<Link
+							key={item.id}
+							to={item.path}
+							className={`
+                                relative flex items-center gap-2 px-4 py-2.5 rounded-lg
+                                text-sm font-medium transition-all duration-200
+                                hover:bg-gray-100
+                                ${
+									isActive(item.id)
+										? "text-blue-600 bg-blue-50 hover:bg-blue-50"
+										: "text-gray-600 hover:text-gray-900"
+								}
+                                sm:px-6
+                            `}
+						>
+							<item.icon
+								className={`w-4 h-4 ${
+									isActive(item.id)
+										? "text-blue-600"
+										: "text-gray-400"
+								}`}
+							/>
+							<span className="hidden sm:block">
+								{item.label}
+							</span>
+
+							{/* Active indicator dot
+							{isActive(item.id) && (
+								<span className="absolute -bottom-1 left-1/2 w-1 h-1 bg-blue-600 rounded-full transform -translate-x-1/2" />
+							)} */}
+						</Link>
+					))}
+				</div>
 			</nav>
 		</div>
 	);
-}
+};
 
-export default AccountNav
+export default AccountNav;

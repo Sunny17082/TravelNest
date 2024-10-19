@@ -3,6 +3,7 @@ import { differenceInCalendarDays } from "date-fns";
 import axios from "axios";
 import { Navigate } from "react-router-dom";
 import { UserContext } from "../UserContext";
+import { loadStripe } from "@stripe/stripe-js";
 
 const BookingOption = ({ place }) => {
 	const [checkIn, setCheckIn] = useState("");
@@ -21,14 +22,39 @@ const BookingOption = ({ place }) => {
 
 	let numberOfDays = 0;
 	if (checkIn && checkOut) {
+		if (new Date(checkIn) > new Date(checkOut)) {
+			alert("Check-out date must be after check-in date");
+			setCheckOut("");
+		}
+		if (new Date(checkIn) < new Date()) {
+			alert("Check-in date must be after today");
+			setCheckIn("");
+		}
 		numberOfDays = differenceInCalendarDays(
 			new Date(checkOut),
 			new Date(checkIn)
 		);
 	}
 
-	async function bookThisPlace() {
-		const response = await axios.post("/bookings", {
+	const makePayment = async () => {
+		if (!user) {
+			alert("Please login to book this place");
+			return;
+		}
+		if (numberOfDays <= 0 || numberOfDays === 0) {
+			alert("Please select valid dates");
+			return;
+		}
+		if (!name || !phone) {
+			alert("Please enter your name and phone");
+			return;
+		}
+
+		const stripe = await loadStripe(
+			"pk_test_51PXNSJRua2fNuy2GVPYspgKS67PUSpmYDUmoy7edHIY1oy3wdYTmdpwEUOHpVjk6W9PIJEIQDtzSFIQF5ztX8SFK00xGBIzivc"
+		);
+
+		const response = await axios.post("/create-checkout-session", {
 			checkIn,
 			checkOut,
 			numberOfGuests,
@@ -37,8 +63,16 @@ const BookingOption = ({ place }) => {
 			place: place._id,
 			price: numberOfDays * place.price,
 		});
-		const bookingId = response.data._id;
-		setRedirect("/account/bookings/" + bookingId);
+
+		const session = response.data;
+
+		const result = await stripe.redirectToCheckout({
+			sessionId: session.id,
+		});
+
+		if (result.error) {
+			alert(result.error.message);
+		};
 	}
 
 	if (redirect) {
@@ -57,6 +91,7 @@ const BookingOption = ({ place }) => {
 							<label>Check-in</label>
 							<input
 								type="date"
+								required
 								value={checkIn}
 								onChange={(ev) => setCheckIn(ev.target.value)}
 							/>
@@ -65,6 +100,7 @@ const BookingOption = ({ place }) => {
 							<label>Check-out</label>
 							<input
 								type="date"
+								required
 								value={checkOut}
 								onChange={(ev) => setCheckOut(ev.target.value)}
 							/>
@@ -87,6 +123,7 @@ const BookingOption = ({ place }) => {
 								<input
 									type="text"
 									placeholder="your name"
+									required
 									value={name}
 									onChange={(ev) => setName(ev.target.value)}
 								/>
@@ -96,6 +133,7 @@ const BookingOption = ({ place }) => {
 								<input
 									type="tel"
 									placeholder="+91 1234567890"
+									required
 									value={phone}
 									onChange={(ev) => setPhone(ev.target.value)}
 								/>
@@ -103,7 +141,7 @@ const BookingOption = ({ place }) => {
 						</>
 					)}
 				</div>
-				<button onClick={bookThisPlace} className="primary">
+				<button onClick={makePayment} className="primary">
 					Book now &nbsp;
 					{numberOfDays > 0 && (
 						<span>₹{numberOfDays * place.price}</span>
