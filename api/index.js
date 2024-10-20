@@ -24,6 +24,8 @@ const bcryptSalt = bcrypt.genSaltSync(10);
 
 const secret = process.env.SECRET;
 
+app.use("/webhook", express.raw({ type: "application/json" }));
+
 // parse incoming requests with JSON payloads
 app.use(express.json());
 
@@ -225,7 +227,6 @@ app.post("/api/create-checkout-session", async (req, res) => {
 // Webhook endpoint
 app.post(
 	"/webhook",
-	express.raw({ type: "application/json" }),
 	async (req, res) => {
 		console.log("Webhook received");
 		const sig = req.headers["stripe-signature"];
@@ -244,6 +245,8 @@ app.post(
 			);
 			return res.sendStatus(400);
 		}
+
+		console.log('Webhook verified successfully. Event type:', event.type);
 
 		if (event.type === "checkout.session.completed") {
 			const session = event.data.object;

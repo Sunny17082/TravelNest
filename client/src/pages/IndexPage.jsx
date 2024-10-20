@@ -105,8 +105,8 @@ const IndexPage = () => {
 							key={tag}
 							className={`px-2 py-1 rounded-md ${
 								selectedTags.includes(tag)
-									? "bg-primary text-white"
-									: "bg-gray-500"
+									? "bg-black text-white"
+									: "bg-gray-600"
 							}`}
 							onClick={() => toggleTag(tag)}
 						>
