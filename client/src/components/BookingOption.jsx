@@ -51,23 +51,13 @@ const BookingOption = ({ place }) => {
 		}
 
 		try {
-			const bookingResponse = await axios.post("/bookings", {
-				place: place._id,
-				checkIn,
-				checkOut,
-				numberOfGuests,
-				name,
-				phone,
-				price: numberOfDays * place.price,
-			});
-
-			const bookingId = bookingResponse.data._id;
-
+			// Remove the first booking creation
 			const stripe = await loadStripe(
 				import.meta.env.VITE_APP_STRIPE_PUBLIC_KEY
 			);
+
+			// Only create booking through checkout session
 			const response = await axios.post("/create-checkout-session", {
-				bookingId,
 				place: place._id,
 				checkIn,
 				checkOut,
