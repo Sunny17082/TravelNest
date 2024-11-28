@@ -95,8 +95,8 @@ const BookingOption = ({ place }) => {
 					Price: ₹{place.price}/night
 				</div>
 				<div className="border rounded-2xl m-4">
-					<div className="flex">
-						<div className="px-3 py-4">
+					<div className="flex sm:flex-row flex-col">
+						<div className="flex flex-col px-5 py-4">
 							<label>Check-in</label>
 							<input
 								type="date"
@@ -105,7 +105,7 @@ const BookingOption = ({ place }) => {
 								onChange={(ev) => setCheckIn(ev.target.value)}
 							/>
 						</div>
-						<div className="px-3 py-4 border-l">
+						<div className="flex flex-col px-5 py-4 sm:border-l sm:border-t-0 border-t">
 							<label>Check-out</label>
 							<input
 								type="date"

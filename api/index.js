@@ -438,7 +438,7 @@ app.get("/api/places", async (req, res) => {
 			sortOption = { price: -1 };
 		}
 
-		const places = await Place.find(query).sort(sortOption);
+		const places = await Place.find(query).sort({ createdAt: -1, ...sortOption });
 		res.json(places);
 	} catch (error) {
 		console.error("Error fetching places:", error);
